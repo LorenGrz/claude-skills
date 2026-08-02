@@ -1,0 +1,4 @@
+interface:
+  display_name: "TypeScript Project Starter"
+  short_description: "Create small JS/TS projects with scripts and verification"
+  default_prompt: "Use typescript-project-starter to scaffold this project with minimal scripts and checks."
