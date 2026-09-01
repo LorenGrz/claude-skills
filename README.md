@@ -100,12 +100,18 @@ into `~/.agents/skills` (and mirrored flat into `~/.claude/skills`).
 `omarchy` and `diagnose-crash` are not vendored here — they update with the OS.
 On a machine without Omarchy, install it (or skip those two skills).
 
+## Clones
+
+- `~/.agents/skills` — the working hub. Git clone of this repo; the flat mirror
+  in `~/.claude/skills` symlinks into it. Edit here.
+- `~/projects/claude-skills` — a second clone, the public showcase. Keep it
+  current with `git -C ~/projects/claude-skills pull` after pushing.
+
 ## Setup on a new machine
 
 ```bash
-# 1. Clone the source-of-truth tree
+# 1. Clone the hub
 git clone https://github.com/LorenGrz/claude-skills ~/.agents/skills
-# (or clone elsewhere and also keep ~/projects/claude-skills as the working copy)
 
 # 2. Link the external skill repos (see table above), e.g.
 git clone https://github.com/LorenGrz/aws-skills ~/projects/aws-skills
@@ -121,4 +127,4 @@ cd ~/.agents/skills && ./sync.sh
    when…", optional `metadata`, optional `paths:` to auto-activate for matching
    files.
 3. Run `./sync.sh` to refresh `~/.claude/skills`.
-4. Commit here and push.
+4. `git commit` and `git push`, then pull in the showcase clone.
