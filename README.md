@@ -64,6 +64,7 @@ regenerate the flat symlinks in `~/.claude/skills`.
 | Skill | Purpose |
 |-------|---------|
 | [`auth-security-basics`](./security/auth-security-basics/SKILL.md) | Auth, authorization, token/session handling, secrets, input validation |
+| [`prompt-injection-defense`](./security/prompt-injection-defense/SKILL.md) | OWASP LLM01 defence-in-depth for apps that send untrusted text to an LLM |
 
 ### `productivity/` — non-code deliverables
 
@@ -96,8 +97,8 @@ into `~/.agents/skills` (and mirrored flat into `~/.claude/skills`).
 | `iam-least-privilege` | [`LorenGrz/aws-skills`](https://github.com/LorenGrz/aws-skills) | security |
 | `omarchy`, `diagnose-crash` | `/usr/share/omarchy/default/agents/skills/` (ships with Omarchy) | system |
 
-`omarchy/` also has a plain copy in this repo as a fallback for a fresh machine
-without Omarchy installed; prefer the upstream version when it exists.
+`omarchy` and `diagnose-crash` are not vendored here — they update with the OS.
+On a machine without Omarchy, install it (or skip those two skills).
 
 ## Setup on a new machine
 
