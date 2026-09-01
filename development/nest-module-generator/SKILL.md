@@ -1,6 +1,11 @@
 ---
 name: nest-module-generator
 description: Use this skill when an agent must generate NestJS modules, controllers, and services with the Nest CLI while preserving clean architecture, domain-centered business logic, and strict separation between domain, application, infrastructure, and presentation layers.
+paths:
+  - "**/*.module.ts"
+  - "**/*.controller.ts"
+  - "**/*.service.ts"
+  - "**/*.resolver.ts"
 metadata:
   version: "0.1.0"
   owner: "platform-automation"

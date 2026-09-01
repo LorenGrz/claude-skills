@@ -1,6 +1,9 @@
 ---
 name: react-scalable-frontend
 description: Use this skill when building or refactoring scalable React TypeScript frontends with clean component boundaries, predictable state, accessible UI, maintainable hooks, and production-ready folder conventions.
+paths:
+  - "**/*.tsx"
+  - "**/*.jsx"
 metadata:
   version: "0.1.0"
   owner: "typescript-fullstack"

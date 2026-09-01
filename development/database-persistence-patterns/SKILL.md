@@ -1,6 +1,11 @@
 ---
 name: database-persistence-patterns
 description: Use this skill when implementing or reviewing NestJS persistence with repositories, migrations, transactions, seeds, local Docker-backed databases, and clean separation between domain logic and storage concerns.
+paths:
+  - "**/*.entity.ts"
+  - "**/*.repository.ts"
+  - "**/*.repository.spec.ts"
+  - "**/migrations/**"
 metadata:
   version: "0.1.0"
   owner: "typescript-fullstack"
