@@ -7,6 +7,7 @@
 /lambda-patterns
 /sam-deploy
 /serverless-scanner
+/apexlang
 
 # Local git metadata when this tree is also the working hub
 /.claude
