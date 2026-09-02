@@ -1,8 +1,12 @@
 # claude-skills
 
-Personal Claude Code skill library for Lorenzo Graizzaro. Skills are loaded on
-demand by Claude when a task matches their `description`, providing consistent
-patterns, rules, and workflows across projects.
+Personal Claude Code setup for Lorenzo Graizzaro:
+
+- **skills** (this tree, by category) — loaded on demand when a task matches their `description`.
+- **[`config/`](./config/)** — `CLAUDE.md`, path-scoped `rules/`, and lifecycle `hooks/`,
+  symlinked into `~/.claude/`. See [`config/README.md`](./config/README.md).
+
+`~/.agents/skills` is a clone of this repo; `~/projects/claude-skills` is a second clone (public showcase).
 
 ## How skills are discovered
 
