@@ -95,6 +95,7 @@ into `~/.agents/skills` (and mirrored flat into `~/.claude/skills`).
 |-------|-------------|---------------------|
 | `sam-deploy`, `lambda-patterns`, `cost-optimizer`, `serverless-scanner` | [`LorenGrz/aws-skills`](https://github.com/LorenGrz/aws-skills) | devops |
 | `iam-least-privilege` | [`LorenGrz/aws-skills`](https://github.com/LorenGrz/aws-skills) | security |
+| `apexlang` (Oracle APEX app generation) | [`oracle/skills`](https://github.com/oracle/skills) — `apex/apexlang`, UPL-1.0 | development |
 | `omarchy`, `diagnose-crash` | `/usr/share/omarchy/default/agents/skills/` (ships with Omarchy) | system |
 
 `omarchy` and `diagnose-crash` are not vendored here — they update with the OS.
@@ -115,6 +116,8 @@ git clone https://github.com/LorenGrz/claude-skills ~/.agents/skills
 
 # 2. Link the external skill repos (see table above), e.g.
 git clone https://github.com/LorenGrz/aws-skills ~/projects/aws-skills
+git clone https://github.com/oracle/skills ~/projects/oracle-skills
+ln -sfn ~/projects/oracle-skills/apex/apexlang ~/.agents/skills/apexlang
 
 # 3. Generate the flat symlink mirror Claude Code reads
 cd ~/.agents/skills && ./sync.sh
