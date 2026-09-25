@@ -24,6 +24,8 @@ These instructions adapt Claude Code to Loren's current Codex workflow. Treat th
 
 ## Roadmap
 
+Now learning Python.`
+
 Loren's full-stack TypeScript learning order:
 
 ```text
@@ -113,6 +115,8 @@ Detect the default branch first: `git symbolic-ref --short refs/remotes/origin/H
    ```
    `--no-ff` keeps each feature visible as its own merge in the tree.
 
+8. **Update project context after merging into `<default>`/`main`/`master`.** If the merged changes alter stack, architecture, modules, env vars, deploy/infra, commands, or known issues, update the project's `CLAUDE.md` (and `AGENTS.md` / `.agents/CONTEXT.md` if present) to match the code, commit it as `docs: update CLAUDE.md after <branch> merge`, and push it in the same session. Skip only when nothing documented changed, and say so.
+
 If the repo has branch protection or a PR-based flow, stop after step 6 and open a PR with `gh pr create` instead of merging locally.
 
 ## Verification
@@ -120,3 +124,27 @@ If the repo has branch protection or a PR-based flow, stop after step 6 and open
 - Run the smallest useful verification command for the change.
 - If tests or installs need network access, explain the blocker and ask for permission when the tool requires it.
 - Report what was changed, what was verified, and anything not verified.
+
+## Agent Routing
+
+Three model-pinned agents live in `/home/loren/.claude/agents/`: `scout` (haiku, read-only), `worker` (sonnet, mechanical execution), `reasoner` (opus, decisions). Delegate only when Loren asks for it or the task clearly matches a row below; otherwise do the work inline.
+
+Pick the first row that matches:
+
+| Signal | Agent | Model |
+|---|---|---|
+| Single step, file and line already known | none — do it inline | — |
+| Read-only: locate, inventory, map conventions, "where is X" | `scout` | haiku |
+| Mechanical and fully specified, with an objective acceptance check (tests pass, `pnpm lint --max-warnings 0`, typecheck) | `worker` | sonnet |
+| Scope crosses modules, architecture or API contract decision, bug with unknown cause, hard to revert | `reasoner` | opus |
+| High risk and hard to verify (auth, secrets, data migration) | two `reasoner` in parallel, blind to each other, then compare | opus |
+
+Discriminators, in order: **scope** (file → module → system), **verifiability** (is there a command that says yes/no?), **reversibility**. A task that is verifiable and reversible drops a tier even if it is long.
+
+Rules:
+
+- Chain is `scout` → `reasoner` (plan) → `worker` (execute) → verify. Skip stages that add nothing.
+- A subagent gets the acceptance command in its prompt, or it is not ready to be delegated.
+- Launch independent agents in a single message so they run in parallel. Use `isolation: "worktree"` when two of them would write the same files.
+- Escalate on evidence, not on impatience: `worker` failing its check twice, or `debug-assistant`'s first hypothesis not reproducing, moves the task to `reasoner`.
+- Per-skill defaults: `execute-test-suite` → scout tier until red; `unit-test-generator`, `react-component-validator`, `nest-module-generator` → worker; `team-architect-agent`, `api-contract-design`, `auth-security-basics`, `code-review-safety` → reasoner.
