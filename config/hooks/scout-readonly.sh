@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# PreToolUse(Bash) hook for the read-only `scout` subagent.
+# Allowlist: every segment of the command (split on | && || ;) must start with
+# a known read-only program, and read-only-looking programs are checked for
+# their write flags. Anything else is denied with exit 2 (stderr goes back to
+# the agent). A denylist is not enough: the scout once ran
+# `aws ec2 terminate-instances` while "read-only" was only prompt text.
+set -uo pipefail
+
+input=$(cat)
+# Also registered globally in settings.json (agent frontmatter hooks only load
+# at session start): act only inside the scout subagent there.
+agent_type=$(jq -r '.agent_type // empty' <<<"$input")
+if [ "${SCOUT_GUARD_ALWAYS:-0}" != 1 ] && [ "$agent_type" != scout ]; then exit 0; fi
+cmd=$(jq -r '.tool_input.command // empty' <<<"$input")
+[ -z "$cmd" ] && exit 0
+
+deny() {
+  echo "scout is read-only: blocked \`$1\` ($2). Report the command instead of running it." >&2
+  exit 2
+}
+
+# Output redirection to anything but /dev/null or another fd writes files.
+while IFS= read -r target; do
+  target="${target#>}"; target="${target#>}"; target="${target#"${target%%[![:space:]]*}"}"
+  [[ "$target" == /dev/null || "$target" =~ ^\&[0-9]$ ]] || deny "$cmd" "output redirection to $target"
+done < <(printf '%s' "$cmd" | grep -Eo '>>?[[:space:]]*[^[:space:]]+')
+# Command substitution / subshells can hide arbitrary programs.
+printf '%s' "$cmd" | grep -Eq '\$\(|`' && deny "$cmd" "command substitution is not allowed"
+
+aws_read_verb='^(describe|list|get|head|lookup|search|batch-get|scan|query|filter|simulate|ls)'
+
+while IFS= read -r seg; do
+  seg="${seg#"${seg%%[![:space:]]*}"}"
+  [ -z "$seg" ] && continue
+  # Drop leading VAR=value assignments.
+  while [[ "$seg" =~ ^[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+(.*)$ ]]; do seg="${BASH_REMATCH[1]}"; done
+  read -r prog rest <<<"$seg"
+  prog="${prog##*/}"
+  case "$prog" in
+    rg|grep|egrep|ls|cat|head|tail|wc|sort|uniq|cut|tr|file|stat|pwd|echo|printf|jq|awk|date|basename|dirname|realpath|readlink|test|true|false|which|du|tree|diff|column|nl|md5sum|sha256sum|base64|markitdown|pdftotext) ;;
+    sed) [[ " $rest " =~ [[:space:]]-i ]] && deny "$seg" "sed -i edits files" ;;
+    find) [[ "$rest" =~ -(delete|exec|execdir|ok|fprint) ]] && deny "$seg" "find with side effects" ;;
+    git)
+      sub=$(awk '{for(i=1;i<=NF;i++) if ($i !~ /^-/ && prev != "-C") {print $i; exit} else prev=$i}' <<<"$rest")
+      [[ "$sub" =~ ^(log|show|diff|status|blame|ls-files|ls-tree|rev-parse|rev-list|branch|grep|describe|shortlog|cat-file|remote)$ ]] \
+        || deny "$seg" "git $sub is not read-only"
+      [[ "$sub" == branch && "$rest" =~ [[:space:]]-(d|D|m|M|c|C)([[:space:]]|$) ]] && deny "$seg" "git branch modification"
+      [[ "$sub" == remote && ! "$rest" =~ remote([[:space:]]+-v)?[[:space:]]*$ ]] && deny "$seg" "git remote modification" ;;
+    curl)
+      [[ "$rest" =~ (^|[[:space:]])(-X|--request)[[:space:]]*(POST|PUT|PATCH|DELETE) ]] && deny "$seg" "curl write method"
+      [[ "$rest" =~ (^|[[:space:]])(-d|--data[a-z-]*|-F|--form|-T|--upload-file)([[:space:]]|=|$) ]] && deny "$seg" "curl sends a body"
+      [[ "$rest" =~ (^|[[:space:]])(-o|--output)[[:space:]]+([^[:space:]]+) && "${BASH_REMATCH[3]}" != /dev/null ]] && deny "$seg" "curl writes a file"
+      [[ "$rest" =~ (^|[[:space:]])(-O|--remote-name) ]] && deny "$seg" "curl writes a file" ;;
+    aws)
+      read -r -a words <<<"$rest"
+      svc="" verb=""
+      for w in "${words[@]}"; do
+        [[ "$w" == -* ]] && continue
+        if [ -z "$svc" ]; then svc="$w"; elif [ -z "$verb" ]; then verb="$w"; break; fi
+      done
+      if [ "$svc" = s3 ]; then [[ "$verb" == ls ]] || deny "$seg" "aws s3 $verb mutates or downloads"
+      else [[ "$verb" =~ $aws_read_verb ]] || deny "$seg" "aws $svc $verb is not a read verb"; fi ;;
+    *) deny "$seg" "'$prog' is not on the read-only allowlist" ;;
+  esac
+done < <(printf '%s\n' "$cmd" | sed -E 's/(\|\||&&|;|\|)/\n/g')
+
+exit 0
