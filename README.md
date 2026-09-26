@@ -74,6 +74,7 @@ regenerate the flat symlinks in `~/.claude/skills`.
 
 | Skill | Purpose |
 |-------|---------|
+| [`ats-resume-formatting`](./productivity/ats-resume-formatting/SKILL.md) | Parse-safe CV layout for Workday/Greenhouse/Lever: single column, stacked Title/Company/Dates, plain-text test. Vendored from [msdanyg/ats-resume-skill](https://github.com/msdanyg/ats-resume-skill) (MIT) |
 | [`cv-linkedin-optimizer`](./productivity/cv-linkedin-optimizer/SKILL.md) | Tailor CV and LinkedIn to a job posting; ATS keywords; honest gaps |
 | [`meeting-notes-organizer`](./productivity/meeting-notes-organizer/SKILL.md) | Raw notes → summary, decisions, action items with owner and deadline |
 | [`presentation-prep`](./productivity/presentation-prep/SKILL.md) | Topic/briefing → slide-by-slide structure with visuals, notes, timing |
