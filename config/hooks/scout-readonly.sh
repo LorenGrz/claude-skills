@@ -15,6 +15,31 @@ if [ "${SCOUT_GUARD_ALWAYS:-0}" != 1 ] && [ "$agent_type" != scout ]; then exit 
 cmd=$(jq -r '.tool_input.command // empty' <<<"$input")
 [ -z "$cmd" ] && exit 0
 
+# Quote-aware helpers: `|`, `;`, `&&` and `>` inside '...' or "..." are data
+# (e.g. rg "a|b"), not shell operators.
+mask_quotes() { # prints $1 with quoted characters replaced by '_'
+  local s=$1 out="" q="" c i
+  for ((i = 0; i < ${#s}; i++)); do
+    c=${s:i:1}
+    if [ -n "$q" ]; then [ "$c" = "$q" ] && q="" && out+=$c || out+=_
+    elif [ "$c" = "'" ] || [ "$c" = '"' ]; then q=$c; out+=$c
+    else out+=$c; fi
+  done
+  printf '%s' "$out"
+}
+split_segments() { # prints one segment per line, split on unquoted | || && ;
+  local s=$1 m seg="" c i
+  m=$(mask_quotes "$s")
+  for ((i = 0; i < ${#s}; i++)); do
+    c=${m:i:1}
+    if [ "$c" = "|" ] || [ "$c" = ";" ] || { [ "$c" = "&" ] && [ "${m:i+1:1}" = "&" ]; }; then
+      printf '%s\n' "$seg"; seg=""
+      [ "${m:i+1:1}" = "|" ] || [ "${m:i+1:1}" = "&" ] && ((i++))
+    else seg+=${s:i:1}; fi
+  done
+  printf '%s\n' "$seg"
+}
+
 deny() {
   echo "scout is read-only: blocked \`$1\` ($2). Report the command instead of running it." >&2
   exit 2
@@ -24,7 +49,7 @@ deny() {
 while IFS= read -r target; do
   target="${target#>}"; target="${target#>}"; target="${target#"${target%%[![:space:]]*}"}"
   [[ "$target" == /dev/null || "$target" =~ ^\&[0-9]$ ]] || deny "$cmd" "output redirection to $target"
-done < <(printf '%s' "$cmd" | grep -Eo '>>?[[:space:]]*[^[:space:]]+')
+done < <(mask_quotes "$cmd" | grep -Eo '>>?[[:space:]]*[^[:space:]]+')
 # Command substitution / subshells can hide arbitrary programs.
 printf '%s' "$cmd" | grep -Eq '\$\(|`' && deny "$cmd" "command substitution is not allowed"
 
@@ -63,6 +88,6 @@ while IFS= read -r seg; do
       else [[ "$verb" =~ $aws_read_verb ]] || deny "$seg" "aws $svc $verb is not a read verb"; fi ;;
     *) deny "$seg" "'$prog' is not on the read-only allowlist" ;;
   esac
-done < <(printf '%s\n' "$cmd" | sed -E 's/(\|\||&&|;|\|)/\n/g')
+done < <(split_segments "$cmd")
 
 exit 0
