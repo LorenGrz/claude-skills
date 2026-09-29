@@ -45,6 +45,13 @@ for link in "$MIRROR"/*; do
   esac
 done
 
+# 3. Ensure Antigravity config has access to the mirror.
+GEMINI_SKILLS="$HOME/.gemini/config/skills"
+if [ ! -e "$GEMINI_SKILLS" ]; then
+  mkdir -p "$HOME/.gemini/config"
+  ln -s "$MIRROR" "$GEMINI_SKILLS"
+fi
+
 echo "hub:    $HUB"
 echo "mirror: $MIRROR"
 echo "created $created, updated $updated, pruned $pruned"

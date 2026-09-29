@@ -4,8 +4,8 @@
 set -uo pipefail
 
 payload="$(cat)"
-f="$(printf '%s' "$payload" | jq -r '.tool_response.filePath // .tool_input.file_path // empty' 2>/dev/null)"
-[ -n "$f" ] && [ -f "$f" ] || exit 0
+f="$(printf '%s' "$payload" | jq -r '.toolCall.args.TargetFile // .toolCall.args.AbsolutePath // .tool_response.filePath // .tool_input.file_path // empty' 2>/dev/null)"
+[ -n "$f" ] && [ -f "$f" ] || { echo '{}'; exit 0; }
 
 dir="$(dirname "$f")"
 ext="${f##*.}"
@@ -49,4 +49,5 @@ case "$ext" in
     fi
     ;;
 esac
+echo '{}'
 exit 0
