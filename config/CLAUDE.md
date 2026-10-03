@@ -127,9 +127,19 @@ If the repo has branch protection or a PR-based flow, stop after step 6 and open
 
 ## Agent Routing
 
-Three model-pinned agents live in `/home/loren/.claude/agents/`: `scout` (haiku, read-only), `worker` (sonnet, mechanical execution), `reasoner` (opus, decisions). Delegate only when Loren asks for it or the task clearly matches a row below; otherwise do the work inline.
+Three model-pinned agents live in `/home/loren/.claude/agents/`: `scout` (haiku, read-only), `worker` (sonnet, mechanical execution), `reasoner` (opus, decisions).
 
-Pick the first row that matches:
+### Orchestrator mode (default, always — including auto mode)
+
+The main chat (Opus) is the **orchestrator**: it talks with Loren, plans, decides, and reviews. It does not implement multi-step work itself, so the conversation never blocks and Loren can keep planning or talking (including voice mode) while work runs.
+
+- **Implementation of an approved plan** → hand the whole plan to **one background Opus agent** (`reasoner`, `run_in_background: true`). Subagents can't spawn subagents, so if part of the plan is purely mechanical and independent, the orchestrator launches a `worker` for it in parallel instead.
+- Its prompt must be self-contained: the plan, file paths, constraints, what it must NOT do, and the acceptance command.
+- While it runs, keep answering Loren; don't poll it. When it reports back, verify the claims (run the acceptance command or spot-check) and summarize.
+- Independent tasks → separate background agents in one message; same files → `isolation: "worktree"`.
+- **Stay inline** (orchestrator does it): quick single-step answers/edits, and anything needing Loren in the loop or touching the outside world — logins, deploys, creating repos/cloud projects, pushing, paid resources, secrets. Background agents can't ask Loren questions, so give them no step that needs approval.
+
+Pick the first row that matches (for sub-delegation and one-off tasks):
 
 | Signal | Agent | Model |
 |---|---|---|
