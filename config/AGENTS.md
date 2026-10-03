@@ -1,0 +1,105 @@
+# Loren Personal Agent Instructions
+
+These instructions are shared by every coding agent (Claude Code, Codex, others). Treat them as persistent personal preferences. Agent-specific additions live in each agent's own file (e.g. `CLAUDE.md`), never duplicated here.
+
+## Communication
+
+- Answer in the user's language by default.
+- For every user message written partly or fully in English, add a 2-line-maximum `English note` (one main issue) plus a `Better` line with the prompt phrased correctly, written only in English (the `english-prompt-coach` skill, when available).
+- Do not correct code, commands, file paths, proper names, or clearly intentional informal shorthand.
+- Keep explanations concise and practical.
+- Use direct engineering language. Avoid cheerleading, vague reassurance, and unnecessary theory.
+
+## Working Style
+
+- Read the existing project before changing it.
+- Prefer small, scoped changes that match the repository's current patterns.
+- Use `rg` or `rg --files` first for searching.
+- Do not overwrite, revert, or delete user changes unless explicitly asked.
+- Before larger work, state the concrete outcome, expected files, and verification command.
+- Prefer project-local dependencies and scripts over global installs.
+- Use `pnpm` by default for JavaScript and TypeScript projects unless a project clearly uses another package manager.
+- Add or keep scripts for `dev`, `test`, `lint`, `format`, and `typecheck` when the project needs them.
+- Maintain a short `README.md` for learning projects with purpose, stack, commands, architecture decisions, lessons learned, and next steps.
+- Per-repo context lives in `AGENTS.md` (single source of truth for every agent). `CLAUDE.md`, when present, contains only `@AGENTS.md` plus Claude-specific instructions. Never duplicate content between them; when a repo has both with overlapping content, merge into AGENTS.md.
+
+## Roadmap
+
+Now learning Python.`
+
+Loren's full-stack TypeScript learning order:
+
+```text
+JavaScript -> Node.js -> TypeScript -> React -> NestJS -> Supabase + WebSockets -> Next.js -> React Native
+```
+
+**Current stage (as of 2026-08-03):** NestJS + Supabase + WebSockets. React in-depth study completed. JavaScript, Node.js, and TypeScript foundations done. Next stages: Next.js → React Native.
+
+- Keep roadmap tasks small and aligned to the current stage.
+- Do not introduce later frameworks just to make a project look advanced.
+- Current roadmap repo: `/home/loren/projects/roadmap`.
+- Repository context file: `/home/loren/projects/roadmap/.agents/CONTEXT.md`.
+- Long-term product track: Study Tracker / Developer Progress Tracker (StudyQuest).
+- Portfolio work should explain problem solved, stack, architecture decisions, lessons learned, repository link, and live demo when available.
+
+## Git
+
+- Assume the worktree may already be dirty.
+- Inspect `git status --short` before committing.
+- Prefer non-interactive git commands: inline `-m` messages, never open an editor, never `-i`.
+- Never use destructive commands like `git reset --hard` or checkout-based reverts unless Loren explicitly asks.
+- Never `git push --force` to `main`/`master` or any shared branch.
+
+### GitHub push workflow (always follow when pushing to main/master or handling a GitHub remote)
+
+Detect the default branch first: `git symbolic-ref --short refs/remotes/origin/HEAD` (falls back to `main`; some repos use `master`). Use that name wherever `<default>` appears.
+
+1. **`.gitignore` gate.** Before the first commit in a repo, make sure `.gitignore` exists and covers, at minimum:
+   - dependencies: `node_modules/`, `.pnp*`, `.venv/`, `venv/`, `__pycache__/`, `*.py[cod]`
+   - env & secrets: `.env`, `.env.*` (but `!.env.example`), `*.pem`, `*.key`, `*credentials*.json`, `*secret*.json`
+   - build output: `dist/`, `build/`, `out/`, `.next/`, `.turbo/`, `coverage/`, `*.tsbuildinfo`
+   - logs & caches: `*.log`, `.cache/`, `tmp/`
+   - OS/editor: `.DS_Store`, `Thumbs.db`, `.idea/`, `.vscode/*` (but `!.vscode/extensions.json`)
+   Base it on the github/gitignore template for the stack. If any of these are already tracked, untrack them: `git rm -r --cached <path>` then commit.
+
+2. **Sync `<default>`:** `git checkout <default> && git pull origin <default>`.
+
+3. **Resolve conflicts** if the pull reported any: fix the files, `git add <resolved>`, `git commit` (or `git merge --continue`). Only then continue.
+
+4. **Branch:** `git checkout -b <type>/<slug>` where `<type>` is `feature`, `refactor`, or `fix` and `<slug>` is a short kebab-case summary.
+
+5. **Verify the touched layer**, then **stage & commit.** Run the checks for what changed and fix failures before committing:
+   - frontend (React/TS): `pnpm lint` (must pass at `--max-warnings 0`) and `pnpm test run`
+   - backend (Kotlin/Spring): `./gradlew test`
+   - other stacks: the project's own lint + typecheck + unit tests
+   Then review `git status --short`; if unrelated changes are mixed in, ask Loren before continuing. Otherwise `git add .` then `git commit -m "<Conventional Commit subject>"`.
+
+6. **Push the branch:** `git push -u origin <type>/<slug>`.
+
+7. **Merge & clean up:**
+   ```
+   git checkout <default>
+   git merge --no-ff <type>/<slug> -m "Merge <type>/<slug>"
+   git push origin <default>
+   git branch -d <type>/<slug>
+   git push origin --delete <type>/<slug>
+   ```
+   `--no-ff` keeps each feature visible as its own merge in the tree.
+
+8. **Update project context after merging into `<default>`/`main`/`master`.** If the merged changes alter stack, architecture, modules, env vars, deploy/infra, commands, or known issues, update the project's `AGENTS.md` (and `CLAUDE.md` only if it holds Claude-specific content, plus `.agents/CONTEXT.md` if present) to match the code, commit it as `docs: update AGENTS.md after <branch> merge`, and push it in the same session. Skip only when nothing documented changed, and say so.
+
+If the repo has branch protection or a PR-based flow, stop after step 6 and open a PR with `gh pr create` instead of merging locally.
+
+## Verification
+
+- Run the smallest useful verification command for the change.
+- If tests or installs need network access, explain the blocker and ask for permission when the tool requires it.
+- Report what was changed, what was verified, and anything not verified.
+
+## Omarchy And System Config
+
+- For end-user Omarchy customization, edit safe user config locations such as `~/.config/`, never Omarchy source under `~/.local/share/omarchy/`.
+- If changing OS or desktop config, test locally first.
+- Before pushing OS config changes, ask Loren to confirm the change works.
+- Omarchy settings repo: `/home/loren/projects/omarchy-settings`.
+- Do not push unrelated or pre-existing changes.

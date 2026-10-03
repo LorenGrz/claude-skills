@@ -4,9 +4,13 @@ Tracked here, symlinked into `~/.claude/` so Claude Code loads it:
 
 ```
 ~/.claude/CLAUDE.md  -> ~/.agents/skills/config/CLAUDE.md
+~/.codex/AGENTS.md   -> ~/.agents/skills/config/AGENTS.md
 ~/.claude/rules      -> ~/.agents/skills/config/rules
 ~/.claude/hooks      -> ~/.agents/skills/config/hooks
 ```
+
+`AGENTS.md` holds the agent-agnostic instructions (read by Codex and other agents); `CLAUDE.md` is
+`@~/.agents/skills/config/AGENTS.md` plus Claude Code-only sections (skills, agent routing).
 
 Edit here, commit, push, then `git -C ~/projects/claude-skills pull` for the showcase clone.
 
